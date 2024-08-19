@@ -1,4 +1,8 @@
-let word; // Declare word globally
+const fs = require('fs');
+const path = require('path');
+const readline = require('readline');
+
+let word;
 let wordList = [];
 let guessedLetters = [];
 let remainingGuesses = 6;
@@ -16,21 +20,18 @@ const dictionaryFile = 'words_alpha.txt'; // Ensure the file path is correct
 
 // Function to load words from a dictionary file and start the game
 function loadWordsFromFile(filename) {
-    fetch(filename)
-    .then(response => {
-        if (!response.ok) {
-            throw new Error(`Network response was not ok: ${response.statusText}`);
+    const filePath = path.join(__dirname, filename);
+    fs.readFile(filePath, 'utf8', (err, data) => {
+        if (err) {
+            console.error(`Error reading file: ${err}`);
+            return;
         }
-        return response.text();
-    })
-    .then(data => {
         wordList = data.split('\n')
             .map(word => word.trim())
             .filter(word => /^[a-zA-Z]+$/.test(word)); // Ensure words contain only alphabetic characters
-        console.log("Words loaded:", wordList); // Debugging: log loaded words
+        console.log("Words loaded:", wordList.length); // Debugging: log loaded words count
         startGame(); // Start the game after loading words
-    })
-    .catch(error => console.error(`Error reading file: ${error}`));
+    });
 }
 
 // Function to start the game
@@ -45,6 +46,7 @@ function startGame() {
     remainingGuesses = 6; // Reset remaining guesses
     displayWord();
     displayHangman();
+    promptGuess();
 }
 
 // Function to choose a random word from the English dictionary
@@ -54,7 +56,7 @@ function chooseRandomWord() {
 
 // Function to display the hangman figure
 function displayHangman() {
-    document.getElementById("hangman").innerText = hangmanParts[6 - remainingGuesses];
+    console.log(hangmanParts[6 - remainingGuesses]);
 }
 
 // Function to display the word with guessed letters
@@ -67,86 +69,48 @@ function displayWord() {
             displayedWord += "_";
         }
     }
-    document.getElementById("word-display").innerText = displayedWord; // Use innerText instead of innerHTML
+    console.log("Word: " + displayedWord.split('').join(' '));
     return displayedWord; // Return the displayed word
 }
 
 // Function to handle a guessed letter
-function makeGuess() {
-    let guess = document.getElementById("guess-input").value.toLowerCase();
-    document.getElementById("guess-input").value = ""; // Clear input field
-
-    if (guess.length !== 1 || !guess.match(/[a-z]/i)) {
-        document.getElementById("guess-feedback").innerHTML = "Please enter a single valid letter.";
-        return;
-    }
-
-    if (guessedLetters.includes(guess)) {
-        document.getElementById("guess-feedback").innerHTML = "You already guessed that letter.";
-        return;
-    }
-
-    guessedLetters.push(guess);
-
-    if (word.includes(guess)) {
-        document.getElementById("guess-feedback").innerHTML = "Correct!";
-    } else {
-        remainingGuesses--;
-        document.getElementById("guess-feedback").innerHTML = `Incorrect. ${remainingGuesses} guesses remaining.`;
-        displayHangman(); // Update hangman figure
-    }
-
-    let displayedWord = displayWord(); // Get the displayed word
-
-    // Check if the game is over
-    if (remainingGuesses === 0 || !displayedWord.includes("_")) {
-        document.getElementById("guess-feedback").innerHTML = remainingGuesses === 0 ? `Sorry, you ran out of guesses. The word was: ${word}` : "Congratulations! You guessed the word.";
-        document.getElementById("guess-input").disabled = true;
-        document.getElementById("guess-button").disabled = true;
-        document.getElementById("word-display").innerText = word; // Display the word
-
-        // Fetch the definition if the word is guessed or game is over
-        if (remainingGuesses === 0 || !displayedWord.includes("_")) {
-            getDefinition(word);
-        }
-    }
-}
-
-// Function to fetch the definition of a word
-function getDefinition(word) {
-    const url = `https://api.dictionaryapi.dev/api/v2/entries/en/${word}`;
-
-    fetch(url)
-    .then(response => response.json())
-    .then(data => {
-        if (data && data[0] && data[0].meanings && data[0].meanings.length > 0) {
-            const definitions = data[0].meanings[0].definitions;
-            if (definitions.length > 0) {
-                // Display the first definition
-                document.getElementById("definition-display").innerText = `Definition: ${definitions[0].definition}`;
-            } else {
-                document.getElementById("definition-display").innerText = "No definition found.";
-            }
-        } else {
-            document.getElementById("definition-display").innerText = "No definition found.";
-        }
-    })
-    .catch(error => {
-        console.error('Error fetching definition:', error);
-        document.getElementById("definition-display").innerText = "Error fetching definition.";
+function promptGuess() {
+    const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout
     });
-}
 
-// Function to restart the game
-function restartGame() {
-    startGame(); // Call the startGame function to restart the game
-    document.getElementById("guess-input").disabled = false; // Enable the guess input field
-    document.getElementById("guess-button").disabled = false; // Enable the guess button
-    document.getElementById("guess-feedback").innerHTML = ""; // Clear the guess feedback
-    document.getElementById("word-display").innerText = ""; // Clear the word display
-    document.getElementById("definition-display").innerText = ""; // Clear the definition display
+    rl.question('Enter a letter: ', (guess) => {
+        guess = guess.toLowerCase();
+
+        if (guess.length !== 1 || !guess.match(/[a-z]/i)) {
+            console.log("Please enter a single valid letter.");
+        } else if (guessedLetters.includes(guess)) {
+            console.log("You already guessed that letter.");
+        } else {
+            guessedLetters.push(guess);
+
+            if (word.includes(guess)) {
+                console.log("Correct!");
+            } else {
+                remainingGuesses--;
+                console.log(`Incorrect. ${remainingGuesses} guesses remaining.`);
+                displayHangman(); // Update hangman figure
+            }
+
+            let displayedWord = displayWord(); // Get the displayed word
+
+            // Check if the game is over
+            if (remainingGuesses === 0 || !displayedWord.includes("_")) {
+                console.log(remainingGuesses === 0 ? `Sorry, you ran out of guesses. The word was: ${word}` : "Congratulations! You guessed the word.");
+                rl.close();
+            } else {
+                rl.close();
+                promptGuess(); // Prompt the next guess
+            }
+        }
+    });
 }
 
 // Initial setup
 loadWordsFromFile(dictionaryFile); // Load words and start the game
-displayHangman(); // Display initial hangman figure
