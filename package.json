@@ -1,6 +1,7 @@
 {
   "name": "hangman",
   "version": "1.0.0",
+  "type": "module",
   "description": "a classic game of word guessing.",
   "main": "app.js",
   "scripts": {
