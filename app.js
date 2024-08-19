@@ -1,4 +1,5 @@
-const fs = require('fs');
+import fs from 'fs';
+
 const path = require('path');
 const readline = require('readline');
 
