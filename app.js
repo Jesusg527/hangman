@@ -34,14 +34,13 @@ function loadWordsFromFile(filename) {
     });
 }
 
-// Function to start the game
 function startGame() {
     if (wordList.length === 0) {
         console.error("No words available to start the game.");
         return;
     }
     word = chooseRandomWord(); // Choose a random word from the dictionary
-    console.log("Chosen word:", word); // Debugging: log chosen word
+    // console.log("Chosen word:", word); // Removed the debug line to avoid displaying the word
     guessedLetters = []; // Reset guessed letters
     remainingGuesses = 6; // Reset remaining guesses
     displayWord();
