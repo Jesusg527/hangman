@@ -4,22 +4,30 @@ let guessedLetters = [];
 let remainingGuesses = 6;
 const hangmanParts = [
     "        ------\n        |    |\n             |\n             |\n             |\n             |\n--------",
-    "        ------\n        |    |\n        O    |\n             |\n             |\n             |\n--------",
-    "        ------\n        |    |\n        O    |\n        |    |\n             |\n             |\n--------",
-    "        ------\n        |    |\n        O    |\n       /|    |\n             |\n             |\n--------",
-    "        ------\n        |    |\n        O    |\n       /|\\  |\n             |\n             |\n--------",
-    "        ------\n        |    |\n        O    |\n       /|\\  |\n       /     |\n             |\n--------",
-    "        ------\n        |    |\n        O    |\n       /|\\  |\n       / \\  |\n             |\n--------"
+    "        ------\n        |    |\n        O    |\n             |\n             |\n--------",
+    "        ------\n        |    |\n        O    |\n        |    |\n             |\n--------",
+    "        ------\n        |    |\n        O    |\n       /|    |\n             |\n--------",
+    "        ------\n        |    |\n        O    |\n       /|\\  |\n             |\n--------",
+    "        ------\n        |    |\n        O    |\n       /|\\  |\n       /     |\n--------",
+    "        ------\n        |    |\n        O    |\n       /|\\  |\n       / \\  |\n--------"
 ];
 
-const dictionaryFile = '/Hangman/words_alpha.txt';
+const dictionaryFile = 'words_alpha.txt'; // Ensure the file path is correct
 
 // Function to load words from a dictionary file and start the game
 function loadWordsFromFile(filename) {
     fetch(filename)
-    .then(response => response.text())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`Network response was not ok: ${response.statusText}`);
+        }
+        return response.text();
+    })
     .then(data => {
-        wordList = data.split('\n').filter(word => word.trim() !== ''); // Ensure no empty words
+        wordList = data.split('\n')
+            .map(word => word.trim())
+            .filter(word => /^[a-zA-Z]+$/.test(word)); // Ensure words contain only alphabetic characters
+        console.log("Words loaded:", wordList); // Debugging: log loaded words
         startGame(); // Start the game after loading words
     })
     .catch(error => console.error(`Error reading file: ${error}`));
@@ -32,6 +40,7 @@ function startGame() {
         return;
     }
     word = chooseRandomWord(); // Choose a random word from the dictionary
+    console.log("Chosen word:", word); // Debugging: log chosen word
     guessedLetters = []; // Reset guessed letters
     remainingGuesses = 6; // Reset remaining guesses
     displayWord();
@@ -58,7 +67,7 @@ function displayWord() {
             displayedWord += "_";
         }
     }
-    document.getElementById("word-display").innerHTML = displayedWord;
+    document.getElementById("word-display").innerText = displayedWord; // Use innerText instead of innerHTML
     return displayedWord; // Return the displayed word
 }
 
@@ -94,7 +103,7 @@ function makeGuess() {
         document.getElementById("guess-feedback").innerHTML = remainingGuesses === 0 ? `Sorry, you ran out of guesses. The word was: ${word}` : "Congratulations! You guessed the word.";
         document.getElementById("guess-input").disabled = true;
         document.getElementById("guess-button").disabled = true;
-        document.getElementById("word-display").innerHTML = word; // Display the word
+        document.getElementById("word-display").innerText = word; // Display the word
 
         // Fetch the definition if the word is guessed or game is over
         if (remainingGuesses === 0 || !displayedWord.includes("_")) {
@@ -114,17 +123,17 @@ function getDefinition(word) {
             const definitions = data[0].meanings[0].definitions;
             if (definitions.length > 0) {
                 // Display the first definition
-                document.getElementById("definition-display").innerHTML = `Definition: ${definitions[0].definition}`;
+                document.getElementById("definition-display").innerText = `Definition: ${definitions[0].definition}`;
             } else {
-                document.getElementById("definition-display").innerHTML = "No definition found.";
+                document.getElementById("definition-display").innerText = "No definition found.";
             }
         } else {
-            document.getElementById("definition-display").innerHTML = "No definition found.";
+            document.getElementById("definition-display").innerText = "No definition found.";
         }
     })
     .catch(error => {
         console.error('Error fetching definition:', error);
-        document.getElementById("definition-display").innerHTML = "Error fetching definition.";
+        document.getElementById("definition-display").innerText = "Error fetching definition.";
     });
 }
 
@@ -134,8 +143,8 @@ function restartGame() {
     document.getElementById("guess-input").disabled = false; // Enable the guess input field
     document.getElementById("guess-button").disabled = false; // Enable the guess button
     document.getElementById("guess-feedback").innerHTML = ""; // Clear the guess feedback
-    document.getElementById("word-display").innerHTML = ""; // Clear the word display
-    document.getElementById("definition-display").innerHTML = ""; // Clear the definition display
+    document.getElementById("word-display").innerText = ""; // Clear the word display
+    document.getElementById("definition-display").innerText = ""; // Clear the definition display
 }
 
 // Initial setup
